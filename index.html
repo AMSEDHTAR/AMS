@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Pengurusan Aset - Jabatan Kecemasan & Trauma HTAR</title>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Our CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Our JavaScript -->
+    <script src="script.js" defer></script>
+    
+    <style>
+        /* Minimal inline CSS for critical elements */
+        .login-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0056b3 0%, #28a745 100%);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container.active { display: flex; }
+        #main-container { display: none; }
+    </style>
+</head>
+<body>
+    <!-- Login Page -->
+    <div class="login-container active" id="login-container">
+        <div class="login-box">
+            <div class="login-logo">
+                <i class="fas fa-hospital"></i>
+                <h2>HTAR ED & Trauma</h2>
+                <p>Sistem Pengurusan Aset</p>
+            </div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username"><i class="fas fa-user"></i> Username</label>
+                    <input type="text" id="username" placeholder="Masukkan username anda" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password"><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="password" placeholder="Masukkan password anda" required>
+                </div>
+                
+                <div class="login-error" id="login-error">
+                    Username atau password salah. Sila cuba lagi.
+                </div>
+                
+                <button type="submit" class="login-btn" id="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Log Masuk
+                </button>
+            </form>
+            
+            <div class="login-footer">
+                <p>Sistem Pengurusan Aset Jabatan Kecemasan & Trauma HTAR</p>
+                <p>© 2026 - Versi 1.0</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main System Container -->
+    <div class="container" id="main-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo-container">
+                <div class="logo">
+                    <i class="fas fa-hospital"></i>
+                    <h2>HTAR ED & Trauma</h2>
+                </div>
+            </div>
+            
+            <div class="nav-links">
+                <div class="nav-item active" data-section="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </div>
+                <div class="nav-item" data-section="medical-assets">
+                    <i class="fas fa-stethoscope"></i>
+                    <span>Aset Perubatan</span>
+                </div>
+                <div class="nav-item" data-section="non-medical-assets">
+                    <i class="fas fa-desktop"></i>
+                    <span>Aset Bukan Perubatan</span>
+                </div>
+                <div class="nav-item" data-section="reports-analytics">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Laporan & Analitik</span>
+                </div>
+                <div class="nav-item" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Log Keluar</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h1 id="page-title">Dashboard Pengurusan Aset</h1>
+                <div class="user-info">
+                    <i class="fas fa-user-circle" style="font-size: 2rem; color: #0056b3;"></i>
+                    <div id="user-details">
+                        <p style="font-weight: 600;">PPP Mohd Shahril bin Mat Daud</p>
+                        <p style="font-size: 0.8rem; color: #6c757d;">Pengurus Sistem - Jabatan Kecemasan & Trauma</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="dashboard-container active">
+                <div class="summary-cards">
+                    <div class="card">
+                        <div class="card-icon bg-primary">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3 id="total-medical-assets">0</h3>
+                            <p>Jumlah Aset Perubatan</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-icon bg-success">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3 id="active-assets">0</h3>
+                            <p>Aset Aktif</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-icon bg-warning">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3 id="ppm-due">0</h3>
+                            <p>Perlu PPM</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-icon bg-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="card-info">
+                            <h3 id="damaged-assets">0</h3>
+                            <p>Aset Rosak</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ppm-alert">
+                    <h3><i class="fas fa-exclamation-circle"></i> Aset Menghampiri Tarikh PPM (1 Bulan Akan Datang)</h3>
+                    <div class="table-responsive">
+                        <table class="alert-table">
+                            <thead>
+                                <tr>
+                                    <th>No. Aset</th>
+                                    <th>Nama Peralatan</th>
+                                    <th>Kategori</th>
+                                    <th>Lokasi</th>
+                                    <th>Tarikh Next PPM</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ppm-alert-table">
+                                <!-- Data dari Google Sheets -->
+                                <tr><td colspan="6" style="text-align: center;">Memuatkan data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="ppm-alert">
+                    <h3><i class="fas fa-clipboard-list"></i> Senarai Aset Terkini</h3>
+                    <div class="table-responsive">
+                        <table class="alert-table">
+                            <thead>
+                                <tr>
+                                    <th>No. Aset</th>
+                                    <th>Nama Peralatan</th>
+                                    <th>Jenama & Model</th>
+                                    <th>Kategori</th>
+                                    <th>Lokasi</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-assets-table">
+                                <!-- Data dari Google Sheets -->
+                                <tr><td colspan="6" style="text-align: center;">Memuatkan data...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Medical Assets Section -->
+            <div id="medical-assets" class="assets-container">
+                <div class="section-header">
+                    <h2>Senarai Aset Perubatan</h2>
+                    <button class="btn btn-primary" id="add-medical-asset">
+                        <i class="fas fa-plus"></i> Tambah Aset Perubatan
+                    </button>
+                </div>
+                
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="filter-status">Status</label>
+                        <select id="filter-status">
+                            <option value="">Semua</option>
+                            <option value="aktif">Aktif</option>
+                            <option value="tidak aktif">Tidak Aktif</option>
+                            <option value="baik pulih">Baik Pulih</option>
+                            <option value="kalibrasi">Kalibrasi</option>
+                            <option value="rosak">Rosak</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter-category">Kategori</label>
+                        <select id="filter-category">
+                            <option value="">Semua</option>
+                            <option value="ventilator">Ventilator</option>
+                            <option value="monitor">Monitor</option>
+                            <option value="defibrillator">Defibrillator</option>
+                            <option value="infusion pump">Infusion Pump</option>
+                            <option value="suction unit">Suction Unit</option>
+                            <option value="syringe pump">Syringe Pump</option>
+                            <option value="others">Others</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter-zone">Zon</label>
+                        <select id="filter-zone">
+                            <option value="">Semua</option>
+                            <option value="Red Zone">Red Zone</option>
+                            <option value="Yellow Zone Medical">Yellow Zone Medical</option>
+                            <option value="Yellow Zone Trauma">Yellow Zone Trauma</option>
+                            <option value="Ccars">Ccars</option>
+                            <option value="Blue Zone">Blue Zone</option>
+                            <option value="Procedure Room">Procedure Room</option>
+                            <option value="Green Zone">Green Zone</option>
+                            <option value="Triage">Triage</option>
+                            <option value="Peobs">Peobs</option>
+                            <option value="CARE Cardio">CARE Cardio</option>
+                            <option value="CARE Respi">CARE Respi</option>
+                            <option value="BER Room/Service">BER Room/Service</option>
+                        </select>
+                    </div>
+                    
+                    <div class="search-container">
+                        <input type="text" id="search-medical-asset" class="search-input" placeholder="Cari aset perubatan...">
+                        <button class="search-btn" id="search-medical-btn">
+                            <i class="fas fa-search"></i> Cari
+                        </button>
+                        <button class="clear-search" id="clear-medical-search">
+                            <i class="fas fa-times"></i> Kosongkan
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="assets-table-container">
+                    <table class="assets-table" id="medical-assets-table">
+                        <thead>
+                            <tr>
+                                <th>No. Aset</th>
+                                <th>Nama Peralatan</th>
+                                <th>Kategori</th>
+                                <th>Jenama & Model</th>
+                                <th>Lokasi</th>
+                                <th>Status</th>
+                                <th>Tarikh Next PPM</th>
+                                <th>Tindakan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="medical-assets-table-body">
+                            <!-- Data dari Google Sheets -->
+                            <tr><td colspan="8" style="text-align: center;">Memuatkan data...</td></tr>
+                        </tbody>
+                    </table>
+                    <div id="medical-no-results" class="no-results" style="display: none;">
+                        Tiada aset perubatan ditemui untuk carian ini.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Non-Medical Assets Section -->
+            <div id="non-medical-assets" class="non-medical-container">
+                <div class="section-header">
+                    <h2>Senarai Aset Bukan Perubatan</h2>
+                    <button class="btn btn-primary" id="add-non-medical-asset">
+                        <i class="fas fa-plus"></i> Tambah Aset Bukan Perubatan
+                    </button>
+                </div>
+                
+                <div class="filters">
+                    <div class="filter-group">
+                        <label for="filter-nonmed-status">Status</label>
+                        <select id="filter-nonmed-status">
+                            <option value="">Semua</option>
+                            <option value="aktif">Aktif</option>
+                            <option value="tidak aktif">Tidak Aktif</option>
+                            <option value="rosak">Rosak</option>
+                            <option value="servis">Servis</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="filter-nonmed-category">Kategori</label>
+                        <select id="filter-nonmed-category">
+                            <option value="">Semua</option>
+                            <option value="komputer">Komputer & IT</option>
+                            <option value="perabot">Perabot</option>
+                            <option value="kenderaan">Kenderaan</option>
+                            <option value="alat tulis">Alat Tulis & Pejabat</option>
+                            <option value="lain">Lain-lain</option>
+                        </select>
+                    </div>
+                    
+                    <div class="search-container">
+                        <input type="text" id="search-nonmedical-asset" class="search-input" placeholder="Cari aset bukan perubatan...">
+                        <button class="search-btn" id="search-nonmedical-btn">
+                            <i class="fas fa-search"></i> Cari
+                        </button>
+                        <button class="clear-search" id="clear-nonmedical-search">
+                            <i class="fas fa-times"></i> Kosongkan
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="assets-table-container">
+                    <table class="assets-table" id="non-medical-assets-table">
+                        <thead>
+                            <tr>
+                                <th>No. Aset</th>
+                                <th>Nama Aset</th>
+                                <th>Kategori</th>
+                                <th>Jenama & Model</th>
+                                <th>Lokasi</th>
+                                <th>Status</th>
+                                <th>Tarikh Servis Seterusnya</th>
+                                <th>Tindakan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="non-medical-assets-table-body">
+                            <!-- Data dari Google Sheets -->
+                            <tr><td colspan="8" style="text-align: center;">Memuatkan data...</td></tr>
+                        </tbody>
+                    </table>
+                    <div id="nonmedical-no-results" class="no-results" style="display: none;">
+                        Tiada aset bukan perubatan ditemui untuk carian ini.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reports & Analytics Section -->
+            <div id="reports-analytics" class="reports-container">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-bar"></i> Laporan & Analitik</h2>
+                    <div>
+                        <button class="btn btn-primary" id="print-report-btn">
+                            <i class="fas fa-print"></i> Cetak Laporan
+                        </button>
+                        <button class="btn btn-success" style="margin-left: 10px;" id="export-data-btn">
+                            <i class="fas fa-file-export"></i> Eksport Data
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="reports-controls">
+                    <div class="filter-group">
+                        <label for="report-period">Tempoh Laporan</label>
+                        <select id="report-period">
+                            <option value="month">Bulan Ini</option>
+                            <option value="last-month">Bulan Lepas</option>
+                            <option value="quarter">Suku Tahun</option>
+                            <option value="year">Tahun Ini</option>
+                            <option value="custom">Tempoh Khas</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="report-type">Jenis Laporan</label>
+                        <select id="report-type">
+                            <option value="asset-status">Status Aset</option>
+                            <option value="ppm-compliance">Pematuhan PPM</option>
+                            <option value="zone-distribution">Taburan Mengikut Zon</option>
+                            <option value="category-analysis">Analisis Kategori</option>
+                            <option value="maintenance-cost">Kos Penyelenggaraan</option>
+                            <option value="all-assets">Semua Aset</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label for="asset-type">Jenis Aset</label>
+                        <select id="asset-type">
+                            <option value="all">Semua Aset</option>
+                            <option value="medical">Aset Perubatan Sahaja</option>
+                            <option value="non-medical">Aset Bukan Perubatan Sahaja</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn btn-primary" style="align-self: flex-end;" id="generate-report-btn">
+                        <i class="fas fa-chart-line"></i> Jana Laporan
+                    </button>
+                </div>
+                
+                <div class="chart-row">
+                    <div class="chart-container">
+                        <h3><i class="fas fa-chart-pie"></i> Taburan Status Aset</h3>
+                        <canvas id="assetStatusChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h3><i class="fas fa-map-marker-alt"></i> Taburan Aset Mengikut Zon</h3>
+                        <canvas id="zoneDistributionChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-row">
+                    <div class="chart-container">
+                        <h3><i class="fas fa-tools"></i> Statistik PPM (6 Bulan Terkini)</h3>
+                        <canvas id="ppmTrendChart"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h3><i class="fas fa-layer-group"></i> Taburan Aset Mengikut Kategori</h3>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="report-card">
+                    <h3><i class="fas fa-clipboard-check"></i> Ringkasan Statistik</h3>
+                    <div class="report-stats">
+                        <div class="stat-item">
+                            <h4 id="availability-rate">0%</h4>
+                            <p>Kadar Ketersediaan Aset</p>
+                        </div>
+                        <div class="stat-item">
+                            <h4 id="ppm-compliance">0%</h4>
+                            <p>Pematuhan Jadual PPM</p>
+                        </div>
+                        <div class="stat-item">
+                            <h4 id="maintenance-cost">RM 0</h4>
+                            <p>Kos Penyelenggaraan Bulan Ini</p>
+                        </div>
+                        <div class="stat-item">
+                            <h4 id="urgent-assets-count">0</h4>
+                            <p>Aset Perlu Perhatian Segera</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="assets-table-container">
+                    <h3 style="color: #0056b3; margin-bottom: 15px;">
+                        <i class="fas fa-exclamation-triangle"></i> Aset Memerlukan Tindakan Segera
+                    </h3>
+                    <table class="assets-table" id="urgent-assets-table">
+                        <thead>
+                            <tr>
+                                <th>No. Aset</th>
+                                <th>Nama Aset</th>
+                                <th>Isu</th>
+                                <th>Lokasi</th>
+                                <th>Tarikh Laporkan</th>
+                                <th>Status</th>
+                                <th>Tindakan</th>
+                            </tr>
+                        </thead>
+                        <tbody id="urgent-assets-table-body">
+                            <!-- Data dari Google Sheets -->
+                            <tr><td colspan="7" style="text-align: center;">Memuatkan data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p>Sistem Pengurusan Aset Jabatan Kecemasan & Trauma</p>
+                <p>Hospital Tengku Ampuan Rahimah (HTAR) &copy; 2026 | PPP Mohd Shahril bin Mat Daud</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for Adding/Editing Asset -->
+    <div class="modal" id="asset-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Tambah Aset Perubatan</h3>
+                <span class="close-modal" id="close-modal">&times;</span>
+            </div>
+            
+            <form id="asset-form">
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="asset-no">No. Aset *</label>
+                            <input type="text" id="asset-no" required>
+                            <div class="error-message" id="asset-no-error">Nombor aset ini sudah wujud dalam sistem. Sila gunakan nombor lain.</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="asset-name">Nama Peralatan *</label>
+                            <input type="text" id="asset-name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="asset-category">Kategori *</label>
+                            <select id="asset-category" required>
+                                <option value="">Pilih Kategori</option>
+                                <option value="ventilator">Ventilator</option>
+                                <option value="monitor">Monitor</option>
+                                <option value="defibrillator">Defibrillator</option>
+                                <option value="infusion pump">Infusion Pump</option>
+                                <option value="suction unit">Suction Unit</option>
+                                <option value="ECG">ECG Machine</option>
+                                <option value="x-ray">X-Ray Machine</option>
+                                <option value="ultrasound">Ultrasound Machine</option>
+                                <option value="syringe pump">Syringe Pump</option>
+                                <option value="others">Others</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="asset-brand">Jenama</label>
+                            <input type="text" id="asset-brand">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="asset-model">Model</label>
+                            <input type="text" id="asset-model">
+                        </div>
+                    </div>
+                    
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label for="asset-location">Lokasi Aset *</label>
+                            <select id="asset-location" required>
+                                <option value="">Pilih Lokasi</option>
+                                <option value="Red Zone">Red Zone</option>
+                                <option value="Yellow Zone Medical">Yellow Zone Medical</option>
+                                <option value="Yellow Zone Trauma">Yellow Zone Trauma</option>
+                                <option value="Ccars">Ccars</option>
+                                <option value="Blue Zone">Blue Zone</option>
+                                <option value="Procedure Room">Procedure Room</option>
+                                <option value="Green Zone">Green Zone</option>
+                                <option value="Triage">Triage</option>
+                                <option value="Peobs">Peobs</option>
+                                <option value="CARE Cardio">CARE Cardio</option>
+                                <option value="CARE Respi">CARE Respi</option>
+                                <option value="BER Room/Service">BER Room/Service</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="asset-status">Status *</label>
+                            <select id="asset-status" required>
+                                <option value="">Pilih Status</option>
+                                <option value="aktif">Aktif</option>
+                                <option value="tidak aktif">Tidak Aktif</option>
+                                <option value="baik pulih">Baik Pulih</option>
+                                <option value="kalibrasi">Kalibrasi</option>
+                                <option value="rosak">Rosak</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="last-ppm">Tarikh PPM Terakhir</label>
+                            <input type="date" id="last-ppm">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="next-ppm">Tarikh Next PPM *</label>
+                            <input type="date" id="next-ppm" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="asset-notes">Catatan</label>
+                            <textarea id="asset-notes" placeholder="Masukkan sebarang catatan mengenai aset..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Gambar Aset (Maksimum 5 gambar)</label>
+                    <div class="image-upload" id="image-upload-area">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Klik atau seret gambar ke sini untuk memuat naik</p>
+                        <input type="file" id="image-upload-input" multiple accept="image/*" style="display: none;">
+                    </div>
+                    
+                    <div class="uploaded-images" id="uploaded-images">
+                        <!-- Uploaded images will appear here -->
+                    </div>
+                </div>
+                
+                <div class="form-group" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px;">
+                    <button type="button" class="btn" id="cancel-asset" style="background-color: #6c757d; color: white;">Batal</button>
+                    <button type="submit" class="btn btn-primary" id="save-asset">Simpan Aset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+</body>
+</html>
